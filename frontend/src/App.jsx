@@ -16,8 +16,23 @@ import InventoryForm from './pages/InventoryForm'
 import CustomerList from './pages/CustomerList'
 import CustomerForm from './pages/CustomerForm'
 import CustomerDetails from './pages/CustomerDetails'
+import AdminDashboard from './pages/AdminDashboard'
+import UserList from './pages/UserList'
+import UserForm from './pages/UserForm'
+import InvoiceList from './pages/InvoiceList'
+import InvoiceDetails from './pages/InvoiceDetails'
+import InvoiceForm from './pages/InvoiceForm'
+import AccountList from './pages/AccountList'
+import AccountForm from './pages/AccountForm'
+import GeneralLedger from './pages/GeneralLedger'
+import FinanceDashboard from './pages/FinanceDashboard'
+import SalesReport from './pages/SalesReport'
+import InventoryReport from './pages/InventoryReport'
+import FinancialReport from './pages/FinancialReport'
+import AuditLogList from './pages/AuditLogList'
 import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 
 const theme = createTheme({
   palette: {
@@ -179,13 +194,25 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" />
 }
 
+function AdminRoute({ children }) {
+  const { isAuthenticated, user } = useAuth()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />
+  }
+  if (user?.role !== 'admin' && !user?.is_superuser) {
+    return <Navigate to="/" />
+  }
+  return children
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <Routes>
+          <NotificationProvider>
+            <Routes>
             <Route path="/login" element={<Login />} />
             <Route
               path="/"
@@ -212,8 +239,61 @@ function App() {
               <Route path="customers/new" element={<CustomerForm />} />
               <Route path="customers/:id" element={<CustomerDetails />} />
               <Route path="customers/:id/edit" element={<CustomerForm />} />
+              <Route
+                path="admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/users"
+                element={
+                  <AdminRoute>
+                    <UserList />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/users/new"
+                element={
+                  <AdminRoute>
+                    <UserForm />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/users/:id/edit"
+                element={
+                  <AdminRoute>
+                    <UserForm />
+                  </AdminRoute>
+                }
+              />
+              <Route path="finance" element={<FinanceDashboard />} />
+              <Route path="finance/invoices" element={<InvoiceList />} />
+              <Route path="finance/invoices/new" element={<InvoiceForm />} />
+              <Route path="finance/invoices/:id" element={<InvoiceDetails />} />
+              <Route path="finance/invoices/:id/edit" element={<InvoiceForm />} />
+              <Route path="finance/accounts" element={<AccountList />} />
+              <Route path="finance/accounts/new" element={<AccountForm />} />
+              <Route path="finance/accounts/:id/edit" element={<AccountForm />} />
+              <Route path="finance/ledger" element={<GeneralLedger />} />
+              <Route path="reports/sales" element={<SalesReport />} />
+              <Route path="reports/inventory" element={<InventoryReport />} />
+              <Route path="reports/financial" element={<FinancialReport />} />
+              <Route
+                path="admin/audit-logs"
+                element={
+                  <AdminRoute>
+                    <AuditLogList />
+                  </AdminRoute>
+                }
+              />
             </Route>
           </Routes>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </ErrorBoundary>

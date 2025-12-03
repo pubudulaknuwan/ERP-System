@@ -106,3 +106,43 @@ export const inventoryAPI = {
   delete: (id) => api.delete(`/api/v1/inventory/inventory-items/${id}/`),
 }
 
+export const usersAPI = {
+  list: (params) => api.get('/api/v1/auth/users/', { params }),
+  get: (id) => api.get(`/api/v1/auth/users/${id}/`),
+  create: (data) => api.post('/api/v1/auth/users/', data),
+  update: (id, data) => api.put(`/api/v1/auth/users/${id}/`, data),
+  delete: (id) => api.delete(`/api/v1/auth/users/${id}/`),
+  activate: (id) => api.post(`/api/v1/auth/users/${id}/activate/`),
+  deactivate: (id) => api.post(`/api/v1/auth/users/${id}/deactivate/`),
+}
+
+export const invoicesAPI = {
+  list: (params) => api.get('/api/v1/finance/invoices/', { params }),
+  get: (id) => api.get(`/api/v1/finance/invoices/${id}/`),
+  create: (data) => api.post('/api/v1/finance/invoices/', data),
+  update: (id, data) => api.put(`/api/v1/finance/invoices/${id}/`, data),
+  delete: (id) => api.delete(`/api/v1/finance/invoices/${id}/`),
+}
+
+export const accountsAPI = {
+  list: (params) => api.get('/api/v1/finance/accounts/', { params }),
+  get: (id) => api.get(`/api/v1/finance/accounts/${id}/`),
+  create: (data) => api.post('/api/v1/finance/accounts/', data),
+  update: (id, data) => api.put(`/api/v1/finance/accounts/${id}/`, data),
+  delete: (id) => api.delete(`/api/v1/finance/accounts/${id}/`),
+}
+
+export const ledgerAPI = {
+  list: (params) => api.get('/api/v1/finance/ledger/', { params }),
+  get: (id) => api.get(`/api/v1/finance/ledger/${id}/`),
+}
+
+export const financeDashboardAPI = {
+  getKPIs: () => api.get('/api/v1/finance/dashboard/kpis/'),
+}
+
+export const auditLogsAPI = {
+  list: (params) => api.get('/api/v1/audit/logs/', { params }),
+  get: (id) => api.get(`/api/v1/audit/logs/${id}/`),
+}
+

@@ -12,6 +12,21 @@ import {
   Button,
   Stack,
 } from '@mui/material'
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 import TrendingUp from '@mui/icons-material/TrendingUp'
 import ShoppingCart from '@mui/icons-material/ShoppingCart'
 import People from '@mui/icons-material/People'
@@ -22,6 +37,8 @@ import LocalShipping from '@mui/icons-material/LocalShipping'
 import Warning from '@mui/icons-material/Warning'
 import { salesOrdersAPI, customersAPI, productsAPI, inventoryAPI } from '../api/api'
 import api from '../api/api'
+
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#7c3aed', '#ec4899']
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -35,6 +52,10 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [recentOrders, setRecentOrders] = useState([])
+  const [chartData, setChartData] = useState({
+    revenueByMonth: [],
+    ordersByStatus: [],
+  })
 
   useEffect(() => {
     fetchDashboardData()
@@ -76,11 +97,65 @@ export default function Dashboard() {
 
       // Get recent orders (last 5)
       setRecentOrders(orders.slice(0, 5))
+
+      // Process chart data
+      processChartData(orders)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const processChartData = (orders) => {
+    // Revenue by month
+    const revenueByMonth = {}
+    orders
+      .filter((o) => o.status === 'fulfilled' || o.status === 'invoiced')
+      .forEach((order) => {
+        const date = new Date(order.order_date || order.created_at)
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+        if (!revenueByMonth[monthKey]) {
+          revenueByMonth[monthKey] = 0
+        }
+        revenueByMonth[monthKey] += parseFloat(order.total_amount || 0)
+      })
+
+    const revenueByMonthArray = Object.entries(revenueByMonth)
+      .map(([month, revenue]) => ({
+        month: new Date(month + '-01').toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+        revenue: parseFloat(revenue.toFixed(2)),
+      }))
+      .sort((a, b) => {
+        const dateA = new Date(a.month)
+        const dateB = new Date(b.month)
+        return dateA - dateB
+      })
+      .slice(-6) // Last 6 months
+
+    // Orders by status
+    const ordersByStatus = {}
+    orders.forEach((order) => {
+      const status = order.status || 'draft'
+      ordersByStatus[status] = (ordersByStatus[status] || 0) + 1
+    })
+
+    const ordersByStatusArray = Object.entries(ordersByStatus).map(([status, count]) => ({
+      name: status.toUpperCase(),
+      value: count,
+    }))
+
+    setChartData({
+      revenueByMonth: revenueByMonthArray,
+      ordersByStatus: ordersByStatusArray,
+    })
+  }
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount || 0)
   }
 
   const StatCard = ({ title, value, icon, color, onClick }) => (
@@ -198,6 +273,82 @@ export default function Dashboard() {
             icon={<AttachMoney sx={{ fontSize: 28 }} />}
             color="#10b981"
           />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3} mb={3}>
+        <Grid item xs={12} md={8}>
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold" mb={3}>
+              Revenue Trend (Last 6 Months)
+            </Typography>
+            {chartData.revenueByMonth.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData.revenueByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    name="Revenue"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box textAlign="center" py={4}>
+                <Typography color="text.secondary">No revenue data available</Typography>
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+            }}
+          >
+            <Typography variant="h6" fontWeight="bold" mb={3}>
+              Orders by Status
+            </Typography>
+            {chartData.ordersByStatus.length > 0 ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={chartData.ordersByStatus}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.ordersByStatus.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <Box textAlign="center" py={4}>
+                <Typography color="text.secondary">No order data available</Typography>
+              </Box>
+            )}
+          </Paper>
         </Grid>
       </Grid>
 
